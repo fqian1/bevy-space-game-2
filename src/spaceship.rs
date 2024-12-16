@@ -6,7 +6,7 @@ use crate::controller::SpaceshipControlEvents;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct SpaceShip;
 
 #[derive(Component)]
@@ -19,10 +19,8 @@ fn spawn_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
     commands.spawn((
         SpaceShip,
         RigidBody::Dynamic,
-        ExternalForce::new(Vec2::ZERO).with_persistence(false),
         Collider::rectangle(50.0, 100.0),
-        ColliderDensity(2.0),
-        Transform::from_translation(Vec3::ZERO).with_scale(Vec3::splat(1.0)),
+        Transform::from_translation(Vec3::ZERO),
         Sprite::from_image(assets.spaceship.clone()),
     ));
 }
@@ -45,23 +43,37 @@ fn spaceship_movement_control(
     let Ok((transform, mut linear_velocity)) = query.get_single_mut() else {
         return;
     };
+    let forward = transform.rotation.mul_vec3(Vec3::Y).truncate();
+    let right = transform.rotation.mul_vec3(Vec3::X).truncate();
     for event in input_event_reader.read() {
         match event {
             SpaceshipControlEvents::ThrustForward => {
-                let rotation = transform.rotation.mul_vec3(Vec3::Y).truncate();
-                linear_velocity.x += rotation.x;
-                linear_velocity.y += rotation.y;
+                linear_velocity.x += forward.x;
+                linear_velocity.y += forward.y;
             }
-            _ => info!("uh"), // SpaceshipControlEvents::ThrustLeft =>
-                              // SpaceshipControlEvents::ThrustBackward =>
-                              // SpaceshipControlEvents::ThrustRight =>
-                              // SpaceshipControlEvents::MainDrive =>
-                              // SpaceshipControlEvents::ThrustClockwise =>
-                              // SpaceshipControlEvents::ThrustAntiClockwise =>
-                              // SpaceshipControlEvents::FireMissile =>
-                              // SpaceshipControlEvents::FirePdc =>
-                              // SpaceshipControlEvents::ToggleAutotrack =>
-                              // SpaceshipControlEvents::FireRailgun =>
+            SpaceshipControlEvents::ThrustLeft => {
+                linear_velocity.x += -right.x;
+                linear_velocity.y += -right.y;
+            }
+            SpaceshipControlEvents::ThrustBackward => {
+                linear_velocity.x += -forward.x;
+                linear_velocity.y += -forward.y;
+            }
+            SpaceshipControlEvents::ThrustRight => {
+                linear_velocity.x += right.x;
+                linear_velocity.y += right.y;
+            }
+            SpaceshipControlEvents::MainDrive => {
+                linear_velocity.x += forward.x;
+                linear_velocity.y += forward.y;
+            }
+            _ => info!("uh"),
+            // SpaceshipControlEvents::ThrustClockwise =>
+            // SpaceshipControlEvents::ThrustAntiClockwise =>
+            // SpaceshipControlEvents::FireMissile =>
+            // SpaceshipControlEvents::FirePdc =>
+            // SpaceshipControlEvents::ToggleAutotrack =>
+            // SpaceshipControlEvents::FireRailgun =>
         }
     }
 }
