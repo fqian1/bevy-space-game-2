@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use big_space::*;
 
 mod asset_loader;
 mod camera;
@@ -32,8 +33,11 @@ use state::StatePlugin;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.build().disable::<TransformPlugin>(),
             PhysicsPlugins::default().with_length_unit(100.0),
+            big_space::BigSpacePlugin::<i32>::default(),
+            big_space::debug::FloatingOriginDebugPlugin::<i32>::default(),
+            big_space::camera::CameraControllerPlugin::<i32>::default(),
         ))
         .insert_resource(Gravity(Vec2::ZERO))
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1)))

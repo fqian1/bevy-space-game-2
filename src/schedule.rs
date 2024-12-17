@@ -12,6 +12,23 @@ pub enum InGameSet {
     Render,
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+pub enum MainMenuSet {
+    Input,
+    Render,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+pub enum GameOverSet {
+    Input,
+    Render,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+pub enum LoadingSet {
+    Render,
+}
+
 pub struct SchedulePlugin;
 
 impl Plugin for SchedulePlugin {
@@ -28,6 +45,12 @@ impl Plugin for SchedulePlugin {
             )
                 .chain()
                 .run_if(in_state(GameState::InGame)),
+        )
+        .configure_sets(
+            Update,
+            (MainMenuSet::Input, MainMenuSet::Render)
+                .chain()
+                .run_if(in_state(GameState::MainMenu)),
         )
         .add_systems(
             Update,

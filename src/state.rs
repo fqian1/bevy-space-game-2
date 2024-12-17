@@ -19,7 +19,7 @@ fn game_state_input_events(
         match current_state.get() {
             GameState::InGame => next_state.set(GameState::Paused),
             GameState::Paused => next_state.set(GameState::InGame),
-            GameState::GameOver => next_state.set(GameState::MainMenu),
+            GameState::GameOver => next_state.set(GameState::MainMenu), // TODO: Create UI for this and remove this
             _ => (),
         }
     }
@@ -38,6 +38,7 @@ impl Plugin for StatePlugin {
             .add_systems(
                 Update,
                 start_game.run_if(in_state(GameState::GameOver).or(in_state(GameState::MainMenu))),
-            );
+            )
+            .add_systems(Update, game_state_input_events);
     }
 }
