@@ -22,7 +22,7 @@ fn spawn_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
         RigidBody::Dynamic,
         Collider::rectangle(50.0, 100.0),
         Transform::from_translation(Vec3::ZERO),
-        Sprite::from_image(assets.spaceship.clone()),
+        Sprite::from_image(assets.ship_base_full_health.clone()),
     ));
 }
 
@@ -33,19 +33,17 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
         RigidBody::Dynamic,
         Collider::rectangle(50.0, 100.0),
         SleepingDisabled,
+        ExternalForce::new(Vec2::ZERO).with_persistence(false),
         Transform::from_translation(Vec3::ZERO),
-        Sprite::from_image(assets.spaceship.clone()),
+        Sprite::from_image(assets.ship_base_full_health.clone()),
     ));
 }
 
 fn spaceship_movement_control(
-    mut query: Query<
-        (&mut Transform, &mut LinearVelocity, &mut AngularVelocity),
-        With<PlayerControlled>,
-    >,
+    mut query: Query<(&mut Transform, &mut ExternalForce), With<PlayerControlled>>,
     mut input_event_reader: EventReader<SpaceshipControlEvents>,
 ) {
-    let Ok((transform, mut linear_velocity, mut angular_velocity)) = query.get_single_mut() else {
+    let Ok((transform, mut external_force)) = query.get_single_mut() else {
         return;
     };
     let forward = transform.rotation.mul_vec3(Vec3::Y).truncate();
@@ -53,30 +51,24 @@ fn spaceship_movement_control(
     for event in input_event_reader.read() {
         match event {
             SpaceshipControlEvents::ThrustForward => {
-                linear_velocity.x += forward.x;
-                linear_velocity.y += forward.y;
+                external_force.apply_force_at_point(Vec2::Y * 1000.0, -Vec2::Y, Vec2::ZERO);
+                info!("applying force: {:?}", external_force);
             }
             SpaceshipControlEvents::ThrustLeft => {
-                linear_velocity.x += -right.x;
-                linear_velocity.y += -right.y;
+                external_force.apply_force_at_point(Vec2::X * -1000.0, -Vec2::Y, Vec2::ZERO);
             }
             SpaceshipControlEvents::ThrustBackward => {
-                linear_velocity.x += -forward.x;
-                linear_velocity.y += -forward.y;
+                external_force.apply_force_at_point(Vec2::Y * -1000.0, -Vec2::Y, Vec2::ZERO);
             }
             SpaceshipControlEvents::ThrustRight => {
-                linear_velocity.x += right.x;
-                linear_velocity.y += right.y;
+                external_force.apply_force_at_point(Vec2::X * 1000.0, -Vec2::Y, Vec2::ZERO);
             }
             SpaceshipControlEvents::MainDrive => {
-                linear_velocity.x += forward.x * 2.0;
-                linear_velocity.y += forward.y * 2.0;
+                external_force.apply_force_at_point(Vec2::Y * 10000.0, -Vec2::Y, Vec2::ZERO);
             }
-            SpaceshipControlEvents::ThrustClockwise => angular_velocity.0 -= 0.1,
-            SpaceshipControlEvents::ThrustAntiClockwise => angular_velocity.0 += 0.1,
+            // SpaceshipControlEvents::ThrustClockwise => angular_velocity.0 -= 0.1,
+            // SpaceshipControlEvents::ThrustAntiClockwise => angular_velocity.0 += 0.1,
             _ => info!("uh"),
-            // SpaceshipControlEvents::ThrustClockwise =>
-            // SpaceshipControlEvents::ThrustAntiClockwise =>
             // SpaceshipControlEvents::FireMissile =>
             // SpaceshipControlEvents::FirePdc =>
             // SpaceshipControlEvents::ToggleAutotrack =>

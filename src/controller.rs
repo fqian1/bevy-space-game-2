@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_enhanced_input::prelude::*;
 
 use crate::schedule::InGameSet;
 

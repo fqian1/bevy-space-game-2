@@ -2,7 +2,6 @@ use std::fmt::Debug;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
-use big_space::*;
 
 mod asset_loader;
 mod camera;
@@ -33,25 +32,22 @@ use state::StatePlugin;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.build().disable::<TransformPlugin>(),
+            DefaultPlugins,
             PhysicsPlugins::default().with_length_unit(100.0),
-            big_space::BigSpacePlugin::<i32>::default(),
-            big_space::debug::FloatingOriginDebugPlugin::<i32>::default(),
-            big_space::camera::CameraControllerPlugin::<i32>::default(),
+            AssetLoaderPlugin,
+            CameraPlugin,
+            // CleanupPlugin,
+            // CollisionPlugin,
+            ControllerPlugin,
+            DebugPlugin,
+            // HealthPlugin,
+            // ProjectilesPlugin,
+            SchedulePlugin,
+            StatePlugin,
+            SpaceshipPlugin,
+            // WeaponsPlugin,
         ))
         .insert_resource(Gravity(Vec2::ZERO))
-        .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1)))
-        .add_plugins(AssetLoaderPlugin)
-        .add_plugins(CameraPlugin)
-        // .add_plugins(CleanupPlugin)
-        // .add_plugins(CollisionPlugin)
-        .add_plugins(ControllerPlugin)
-        .add_plugins(DebugPlugin)
-        // .add_plugins(HealthPlugin)
-        // .add_plugins(ProjectilesPlugin)
-        .add_plugins(SchedulePlugin)
-        .add_plugins(StatePlugin)
-        .add_plugins(SpaceshipPlugin)
-        // .add_plugins(WeaponsPlugin)
+        .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))
         .run();
 }

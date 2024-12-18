@@ -2,11 +2,11 @@ use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum GameState {
-    #[default]
     InGame,
     Paused,
     GameOver,
     MainMenu,
+    #[default]
     Loading,
 }
 
@@ -22,6 +22,7 @@ fn game_state_input_events(
             GameState::GameOver => next_state.set(GameState::MainMenu), // TODO: Create UI for this and remove this
             _ => (),
         }
+        info!("change state");
     }
 }
 
@@ -39,6 +40,9 @@ impl Plugin for StatePlugin {
                 Update,
                 start_game.run_if(in_state(GameState::GameOver).or(in_state(GameState::MainMenu))),
             )
-            .add_systems(Update, game_state_input_events);
+            .add_systems(
+                Update,
+                game_state_input_events.run_if(in_state(GameState::InGame)),
+            );
     }
 }
