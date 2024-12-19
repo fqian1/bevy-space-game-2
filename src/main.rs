@@ -14,6 +14,7 @@ mod projectiles;
 mod schedule;
 mod spaceship;
 mod state;
+mod thrusters;
 mod weapons;
 
 use asset_loader::AssetLoaderPlugin;

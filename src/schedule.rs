@@ -40,7 +40,7 @@ impl Plugin for SchedulePlugin {
                 InGameSet::Physics,
                 InGameSet::Collisions,
                 InGameSet::GameLogic,
-                InGameSet::Cleanup, // Despawn entities
+                InGameSet::Cleanup,
                 InGameSet::Render,
             )
                 .chain()
@@ -51,6 +51,16 @@ impl Plugin for SchedulePlugin {
             (MainMenuSet::Input, MainMenuSet::Render)
                 .chain()
                 .run_if(in_state(GameState::MainMenu)),
+        )
+        .configure_sets(
+            Update,
+            (GameOverSet::Input, GameOverSet::Render)
+                .chain()
+                .run_if(in_state(GameState::GameOver)),
+        )
+        .configure_sets(
+            Update,
+            LoadingSet::Render.run_if(in_state(GameState::Loading)),
         );
     }
 }

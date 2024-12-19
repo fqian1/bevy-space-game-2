@@ -5,6 +5,8 @@ use crate::asset_loader::ImageAssets;
 use crate::controller::SpaceshipControlEvents;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
+use crate::thrusters;
+use crate::weapons;
 
 #[derive(Component, Debug)]
 pub struct SpaceShip;
@@ -15,28 +17,91 @@ pub struct PlayerControlled;
 #[derive(Component)]
 pub struct AiControlled;
 
-fn spawn_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
-    commands.spawn((
-        AiControlled,
-        SpaceShip,
-        RigidBody::Dynamic,
-        Collider::rectangle(50.0, 100.0),
-        Transform::from_translation(Vec3::ZERO),
-        Sprite::from_image(assets.ship_base_full_health.clone()),
-    ));
+#[derive(Component, Debug, Default, Deref, DerefMut)]
+pub struct Health {
+    #[deref]
+    pub value: f32,
+}
+
+#[derive(Bundle)]
+pub struct SpaceshipBundle {
+    pub spaceship: SpaceShip,
+    pub rigid_body: RigidBody,
+    pub collider: Collider,
+    pub transform: Transform,
+    pub sprite: Sprite,
+    pub external_force: ExternalForce,
+    pub sleeping_disabled: SleepingDisabled,
+}
+
+impl Default for SpaceshipBundle {
+    fn default() -> Self {
+        Self {
+            spaceship: SpaceShip,
+            rigid_body: RigidBody::Dynamic,
+            collider: Collider::rectangle(10.0, 10.0),
+            transform: Transform::from_translation(Vec3::ZERO),
+            sprite: Sprite::from_image(ImageAssets::default().ship_base_full_health),
+            external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
+            sleeping_disabled: SleepingDisabled,
+        }
+    }
 }
 
 fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
-    commands.spawn((
-        PlayerControlled,
-        SpaceShip,
-        RigidBody::Dynamic,
-        Collider::rectangle(50.0, 100.0),
-        SleepingDisabled,
-        ExternalForce::new(Vec2::ZERO).with_persistence(false),
-        Transform::from_translation(Vec3::ZERO),
-        Sprite::from_image(assets.ship_base_full_health.clone()),
-    ));
+    commands
+        .spawn((PlayerControlled, SpaceshipBundle {
+            sprite: Sprite::from_image(assets.ship_base_full_health.clone()),
+            ..Default::default()
+        }))
+        .with_children(|parent| {
+            parent.spawn(thrusters::ThrusterBundle {
+                sprite: Sprite::from_image(assets.ship_weapon_auto_cannon.clone()),
+                transform: Transform::from_translation(Vec3::new(0.0, -5.0, 0.0)),
+                thrust: thrusters::Thrust { value: 1000.0 },
+                fuel_type: thrusters::FuelType::FusionPellets(1.0),
+                ..Default::default()
+            });
+        })
+        .with_children(|parent| {
+            parent.spawn(thrusters::ThrusterBundle {
+                sprite: Sprite::from_image(assets.ship_weapon_auto_cannon.clone()),
+                transform: Transform {
+                    translation: Vec3::new(0.0, -5.0, 0.0),
+                    rotation: Quat::from_rotation_z(std::f32::consts::PI),
+                    ..default()
+                },
+                thrust: thrusters::Thrust { value: 1000.0 },
+                fuel_type: thrusters::FuelType::FusionPellets(1.0),
+                ..Default::default()
+            });
+        })
+        .with_children(|parent| {
+            parent.spawn(thrusters::ThrusterBundle {
+                sprite: Sprite::from_image(assets.ship_weapon_auto_cannon.clone()),
+                transform: Transform {
+                    translation: Vec3::new(5.0, -5.0, 0.0),
+                    rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * 3.0),
+                    ..default()
+                },
+                thrust: thrusters::Thrust { value: 1000.0 },
+                fuel_type: thrusters::FuelType::FusionPellets(1.0),
+                ..Default::default()
+            });
+        })
+        .with_children(|parent| {
+            parent.spawn(thrusters::ThrusterBundle {
+                sprite: Sprite::from_image(assets.ship_weapon_auto_cannon.clone()),
+                transform: Transform {
+                    translation: Vec3::new(-5.0, -5.0, 0.0),
+                    rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * 5.0),
+                    ..default()
+                },
+                thrust: thrusters::Thrust { value: 1000.0 },
+                fuel_type: thrusters::FuelType::FusionPellets(1.0),
+                ..Default::default()
+            });
+        });
 }
 
 fn spaceship_movement_control(
@@ -46,8 +111,7 @@ fn spaceship_movement_control(
     let Ok((transform, mut external_force)) = query.get_single_mut() else {
         return;
     };
-    let forward = transform.rotation.mul_vec3(Vec3::Y).truncate();
-    let right = transform.rotation.mul_vec3(Vec3::X).truncate();
+
     for event in input_event_reader.read() {
         match event {
             SpaceshipControlEvents::ThrustForward => {
