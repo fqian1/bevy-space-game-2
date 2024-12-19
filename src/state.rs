@@ -42,7 +42,8 @@ impl Plugin for StatePlugin {
             )
             .add_systems(
                 Update,
-                game_state_input_events.run_if(in_state(GameState::InGame)),
+                game_state_input_events
+                    .run_if(in_state(GameState::InGame).or(in_state(GameState::Paused))),
             );
     }
 }

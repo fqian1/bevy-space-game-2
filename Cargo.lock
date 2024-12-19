@@ -2674,6 +2674,7 @@ dependencies = [
  "bevy_aseprite_ultra",
  "bevy_enhanced_input",
  "bevy_hanabi",
+ "bitflags 2.6.0",
  "log",
  "rand",
 ]

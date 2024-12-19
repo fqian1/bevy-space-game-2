@@ -1,7 +1,14 @@
 use std::fmt::Debug;
 
 use avian2d::prelude::*;
-use bevy::prelude::*;
+use bevy::{
+    core::FrameCount,
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+    window::{CursorGrabMode, PresentMode, SystemCursorIcon, WindowLevel, WindowTheme},
+    winit::cursor::CursorIcon,
+};
+use bevy_hanabi::prelude::*;
 
 mod asset_loader;
 mod camera;
@@ -33,20 +40,39 @@ use state::StatePlugin;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Space Game".to_string(),
+                    name: Some("Space Game".to_string()),
+                    resolution: (500.0, 300.0).into(),
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: false,
+                    window_theme: Some(WindowTheme::Dark),
+                    enabled_buttons: bevy::window::EnabledButtons {
+                        maximize: false,
+                        ..default()
+                    },
+                    present_mode: PresentMode::AutoNoVsync,
+                    ..default()
+                }),
+                ..default()
+            }),
+            // LogDiagnosticsPlugin::default(),
+            // FrameTimeDiagnosticsPlugin,
             PhysicsPlugins::default().with_length_unit(100.0),
             AssetLoaderPlugin,
             CameraPlugin,
             // CleanupPlugin,
             // CollisionPlugin,
             ControllerPlugin,
-            DebugPlugin,
+            // DebugPlugin,
             // HealthPlugin,
             // ProjectilesPlugin,
             SchedulePlugin,
             StatePlugin,
             SpaceshipPlugin,
             // WeaponsPlugin,
+            HanabiPlugin,
         ))
         .insert_resource(Gravity(Vec2::ZERO))
         .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))
