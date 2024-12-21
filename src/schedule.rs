@@ -47,6 +47,19 @@ impl Plugin for SchedulePlugin {
                 .run_if(in_state(GameState::InGame)),
         )
         .configure_sets(
+            FixedUpdate,
+            (
+                InGameSet::Input,
+                InGameSet::Physics,
+                InGameSet::Collisions,
+                InGameSet::GameLogic,
+                InGameSet::Cleanup,
+                InGameSet::Render,
+            )
+                .chain()
+                .run_if(in_state(GameState::InGame)),
+        )
+        .configure_sets(
             Update,
             (MainMenuSet::Input, MainMenuSet::Render)
                 .chain()

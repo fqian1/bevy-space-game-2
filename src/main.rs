@@ -52,7 +52,7 @@ fn main() {
                         maximize: false,
                         ..default()
                     },
-                    present_mode: PresentMode::AutoNoVsync,
+                    // present_mode: PresentMode::AutoNoVsync,
                     ..default()
                 }),
                 ..default()

@@ -52,10 +52,15 @@ pub struct ThrusterBundle {
 
 impl Default for ThrusterBundle {
     fn default() -> Self {
+        let shape = Rectangle::new(3.0, 8.0);
         ThrusterBundle {
             transform: Transform::default(),
-            sprite: Sprite::default(),
-            thrust: Thrust { value: 1000.0 },
+            sprite: Sprite {
+                color: Color::srgb(1.0, 1.0, 1.0),
+                custom_size: Some(shape.size()),
+                ..default()
+            },
+            thrust: Thrust { value: 10000.0 },
             fuel_type: FuelType::Hydrazine(1.0),
             fuel_consumption: FuelConsumption { value: 1.0 },
             thruster_roles: ThrusterRoles::Forward,

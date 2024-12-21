@@ -2,7 +2,7 @@ use avian2d::prelude::{PhysicsSet, RigidBodyQueryReadOnly};
 use bevy::prelude::*;
 
 use crate::schedule::InGameSet;
-use crate::spaceship::PlayerControlled;
+use crate::spaceship::{Player, SpaceShip};
 
 const SPRING_CONSTANT: f32 = 1.05;
 const DAMPING_FACTOR: f32 = 1.0;
@@ -27,7 +27,7 @@ fn spawn_camera(mut commands: Commands) {
 
 fn update_camera_position(
     mut camera: Query<(&mut Transform, &mut Velocity), With<MainCamera>>,
-    spaceship: Query<RigidBodyQueryReadOnly, With<PlayerControlled>>,
+    spaceship: Query<RigidBodyQueryReadOnly, (With<SpaceShip>, With<Player>)>,
     time: Res<Time>,
 ) {
     let Ok((mut camera_transform, mut camera_velocity)) = camera.get_single_mut() else {

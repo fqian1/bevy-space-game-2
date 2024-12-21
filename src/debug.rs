@@ -1,15 +1,13 @@
 use bevy::prelude::*;
 
 use crate::schedule::InGameSet;
-use crate::spaceship::PlayerControlled;
-use crate::thrusters::Thrust;
+use crate::spaceship::{Player, SpaceShip};
 
-fn print_position(query: Query<(Entity, &Transform), With<Thrust>>) {
+fn print_position(query: Query<(Entity, &Transform), (With<SpaceShip>, With<Player>)>) {
     for (entity, transform) in query.iter() {
         info!(
-            "Thruster {:?} is at rotation {:?},",
-            entity,
-            transform.rotation.mul_vec3(Vec3::Y).truncate()
+            "Entity {:?} is at position {:?},",
+            entity, transform.translation
         );
     }
 }
