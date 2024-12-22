@@ -1,10 +1,12 @@
 use avian2d::{math::*, prelude::*};
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
 use crate::controller::PlayerInputEvents;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
+use crate::thrusters::Status;
 use crate::thrusters::*;
 use crate::weapons::*;
 
@@ -32,7 +34,6 @@ pub struct SpaceshipBundle {
     pub rigid_body: RigidBody,
     pub collider: Collider,
     pub transform: Transform,
-    pub sprite: Sprite,
     pub external_force: ExternalForce,
     pub sleeping_disabled: SleepingDisabled,
 }
@@ -43,13 +44,8 @@ impl Default for SpaceshipBundle {
         Self {
             spaceship: SpaceShip,
             rigid_body: RigidBody::Dynamic,
-            collider: shape.collider(),
+            collider: Collider::default(),
             transform: Transform::from_translation(Vec3::ZERO),
-            sprite: Sprite {
-                color: Color::srgb(0.4, 0.4, 0.4),
-                custom_size: Some(shape.size()),
-                ..default()
-            },
             external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
             sleeping_disabled: SleepingDisabled,
         }
@@ -137,17 +133,12 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
     ]);
 }
 
-fn spaceship_movement_control(
-    mut q_spaceship: Query<
-        (&Children, &mut ExternalForce, &Transform),
-        (With<Player>, With<SpaceShip>),
-    >,
-    mut q_thrusters: Query<(&ThrusterRoles, &GlobalTransform, &Thrust, &FuelType)>,
+fn spaceship_control(
+    mut q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
+    mut q_thrusters: Query<&Status>,
     mut input_event_reader: EventReader<PlayerInputEvents>,
 ) {
-    let Ok((children, mut spaceship_external_force, &center_of_mass)) =
-        q_spaceship.get_single_mut()
-    else {
+    let Ok(thrusters) = q_spaceship.get_single_mut() else {
         return;
     };
 
@@ -221,8 +212,6 @@ fn spaceship_movement_control(
                     &center_of_mass,
                 );
             }
-            // PlayerInputEventss::ThrustClockwise => angular_velocity.0 -= 0.1,
-            // PlayerInputEventss::ThrustAntiClockwise => angular_velocity.0 += 0.1,
             // PlayerInputEventss::FireMissile =>
             // PlayerInputEventss::FirePdc =>
             // PlayerInputEventss::ToggleAutotrack =>
@@ -237,9 +226,6 @@ pub struct SpaceshipPlugin;
 impl Plugin for SpaceshipPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PostStartup, spawn_player_spaceship)
-            .add_systems(
-                FixedUpdate,
-                spaceship_movement_control.in_set(InGameSet::Physics),
-            );
+            .add_systems(FixedUpdate, spaceship_control.in_set(InGameSet::Physics));
     }
 }

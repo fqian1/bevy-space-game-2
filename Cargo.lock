@@ -4073,6 +4073,8 @@ dependencies = [
  "bitflags 2.6.0",
  "log",
  "rand",
+ "ron",
+ "serde",
 ]
 
 [[package]]
