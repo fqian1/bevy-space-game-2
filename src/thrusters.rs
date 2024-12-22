@@ -71,6 +71,7 @@ pub enum Status {
 bitflags! {
     #[derive(Component, Debug, Clone, Copy)]
     pub struct ThrusterRoles: u8 {
+        const None = 0b00000000;
         const Forward = 0b00000001;
         const Backward = 0b00000010;
         const Left = 0b00000100;
@@ -141,10 +142,11 @@ pub fn update_thrusters(
 
 pub fn apply_force(
     q_thrusters: Query<(&Parent, &Thrust, &Status, &GlobalTransform)>,
-    mut q_parent: Query<(&mut ExternalForce, &GlobalTransform)>,
+    mut q_parent: Query<(&mut ExternalForce, &GlobalTransform, &ComputedCenterOfMass)>,
 ) {
     for (parent, thrust, status, thruster_global_transform) in q_thrusters.iter() {
-        let Ok((mut external_force, &spaceship_global_transform)) = q_parent.get_mut(parent.get())
+        let Ok((mut external_force, &parent_global_transform, &parent_center_of_mass)) =
+            q_parent.get_mut(parent.get())
         else {
             return;
         };
@@ -159,7 +161,7 @@ pub fn apply_force(
                 external_force.apply_force_at_point(
                     force,
                     thruster_global_transform.translation().truncate(),
-                    spaceship_global_transform.translation().truncate(),
+                    parent_global_transform.translation().truncate() + *parent_center_of_mass,
                 );
             }
             _ => (),

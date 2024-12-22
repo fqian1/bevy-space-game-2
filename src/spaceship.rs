@@ -6,8 +6,7 @@ use crate::asset_loader::ImageAssets;
 use crate::controller::PlayerInputEvents;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
-use crate::thrusters::Status;
-use crate::thrusters::*;
+use crate::thrusters::{Status, Thruster, ThrusterBundle, ThrusterRoles};
 use crate::weapons::*;
 
 #[derive(Component, Debug)]
@@ -57,166 +56,83 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
         .spawn((Player, SpaceshipBundle { ..default() }))
         .id();
 
-    let main_drive = commands
-        .spawn(ThrusterBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, -22.5, 0.0),
-                rotation: Quat::from_rotation_z(std::f32::consts::PI),
-                ..default()
-            },
-            thruster_roles: ThrusterRoles::MainDrive,
-            thrust: Thrust { value: 30000.0 },
-            ..Default::default()
-        })
-        .id();
+    let thruster_locations = [
+        Vec2::new(0.0, -12.5),  // Bottom
+        Vec2::new(-7.5, -12.5), // Bottom left
+        Vec2::new(7.5, -12.5),  // Bottom right
+        Vec2::new(-7.5, 12.5),  // Top left
+        Vec2::new(7.5, 12.5),   // Top right
+    ];
 
-    let thruster_NE = commands
-        .spawn(ThrusterBundle {
-            transform: Transform {
-                translation: Vec3::new(7.5, 12.5, 0.0),
-                rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * -1.0),
-                ..Default::default()
-            },
-            thruster_roles: ThrusterRoles::Backward
-                | ThrusterRoles::Left
-                | ThrusterRoles::AntiClockwise,
-            ..Default::default()
-        })
-        .id();
+    let thruster_rotations = [
+        std::f32::consts::PI,              // Bottom
+        std::f32::consts::FRAC_PI_4 * 3.0, // Bottom left
+        std::f32::consts::FRAC_PI_4 * 5.0, // Bottom right
+        std::f32::consts::FRAC_PI_4,       // Top Left
+        std::f32::consts::FRAC_PI_4 * 7.0, // Top Right
+    ];
 
-    let thruster_NW = commands
-        .spawn(ThrusterBundle {
-            transform: Transform {
-                translation: Vec3::new(-7.5, 12.5, 0.0),
-                rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * 1.0),
-                ..Default::default()
-            },
-            thruster_roles: ThrusterRoles::Backward
-                | ThrusterRoles::Right
-                | ThrusterRoles::Clockwise,
-            ..Default::default()
-        })
-        .id();
+    for (location, rotation) in thruster_locations.iter().zip(thruster_rotations.iter()) {
+        commands.spawn((Thruster, ThrusterBundle {
+            transform: Transform::from_translation(location.extend(0.0))
+                .with_rotation(Quat::from_rotation_z(*rotation)),
+            ..default()
+        }));
+    }
 
-    let thruster_SW = commands
-        .spawn(ThrusterBundle {
-            transform: Transform {
-                translation: Vec3::new(-7.5, -12.5, 0.0),
-                rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * 3.0),
-                ..Default::default()
-            },
-            thruster_roles: ThrusterRoles::Forward
-                | ThrusterRoles::Right
-                | ThrusterRoles::AntiClockwise,
-            ..Default::default()
-        })
-        .id();
-
-    let thruster_SE = commands
-        .spawn(ThrusterBundle {
-            transform: Transform {
-                translation: Vec3::new(7.5, -12.5, 0.0),
-                rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * -3.0),
-                ..Default::default()
-            },
-            thruster_roles: ThrusterRoles::Forward | ThrusterRoles::Left | ThrusterRoles::Clockwise,
-            ..Default::default()
-        })
-        .id();
-
-    commands.entity(spaceship).add_children(&[
-        main_drive,
-        thruster_NE,
-        thruster_NW,
-        thruster_SW,
-        thruster_SE,
-    ]);
+    commands.entity(spaceship).add_children(&[]);
 }
 
 fn spaceship_control(
-    mut q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
-    mut q_thrusters: Query<&Status>,
+    q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
+    mut q_thrusters: Query<(&mut Status, &ThrusterRoles)>,
     mut input_event_reader: EventReader<PlayerInputEvents>,
 ) {
-    let Ok(thrusters) = q_spaceship.get_single_mut() else {
+    let Ok(thrusters) = q_spaceship.get_single() else {
         return;
     };
 
-    let apply_thrust =
-        |role: &ThrusterRoles, external_force: &mut ExternalForce, center_of_mass: &Transform| {
-            for &child in children.iter() {
-                if let Ok((thruster_roles, thruster_transform, thruster_thrust, fuel_type)) =
-                    q_thrusters.get(child)
-                {
-                    if thruster_roles.contains(*role) {
-                        let force = -thruster_transform.rotation().mul_vec3(Vec3::Y).truncate()
-                            * thruster_thrust.value;
-                        external_force.apply_force_at_point(
-                            force,
-                            thruster_transform.translation().truncate(),
-                            center_of_mass.translation.truncate(),
-                        );
-                    }
-                }
+    let mut set_status = |role: &ThrusterRoles| {
+        for &thruster in thrusters.iter() {
+            let Ok((mut status, thruster_role)) = q_thrusters.get_mut(thruster) else {
+                return;
+            };
+            if thruster_role.contains(*role) {
+                *status = Status::Active;
+            } else {
+                *status = Status::Inactive;
             }
-        };
+        }
+    };
 
     for event in input_event_reader.read() {
         match event {
             PlayerInputEvents::Up => {
-                apply_thrust(
-                    &ThrusterRoles::Forward,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::Forward);
             }
             PlayerInputEvents::Left => {
-                apply_thrust(
-                    &ThrusterRoles::Left,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::Left);
             }
             PlayerInputEvents::Down => {
-                apply_thrust(
-                    &ThrusterRoles::Backward,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::Backward);
             }
             PlayerInputEvents::Right => {
-                apply_thrust(
-                    &ThrusterRoles::Right,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::Right);
             }
             PlayerInputEvents::MainDrive => {
-                apply_thrust(
-                    &ThrusterRoles::MainDrive,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::MainDrive);
             }
             PlayerInputEvents::RotateClockwise => {
-                apply_thrust(
-                    &ThrusterRoles::Clockwise,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::Clockwise);
             }
             PlayerInputEvents::RotateAntiClockwise => {
-                apply_thrust(
-                    &ThrusterRoles::AntiClockwise,
-                    &mut spaceship_external_force,
-                    &center_of_mass,
-                );
+                set_status(&ThrusterRoles::AntiClockwise);
             }
             // PlayerInputEventss::FireMissile =>
             // PlayerInputEventss::FirePdc =>
             // PlayerInputEventss::ToggleAutotrack =>
             // PlayerInputEventss::FireRailgun =>
-            _ => info!("No event found"),
+            _ => set_status(&ThrusterRoles::None),
         }
     }
 }
