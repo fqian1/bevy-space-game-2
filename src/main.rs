@@ -36,6 +36,7 @@ use schedule::SchedulePlugin;
 use spaceship::SpaceshipPlugin;
 use state::StatePlugin;
 // use weapons::WeaponsPlugin;
+use thrusters::ThrusterPlugin;
 
 fn main() {
     App::new()
@@ -65,7 +66,7 @@ fn main() {
             // CleanupPlugin,
             // CollisionPlugin,
             ControllerPlugin,
-            // DebugPlugin,
+            DebugPlugin,
             // HealthPlugin,
             // ProjectilesPlugin,
             SchedulePlugin,
@@ -73,6 +74,7 @@ fn main() {
             SpaceshipPlugin,
             // WeaponsPlugin,
             HanabiPlugin,
+            ThrusterPlugin,
         ))
         .insert_resource(Gravity(Vec2::ZERO))
         .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))

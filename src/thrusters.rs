@@ -1,5 +1,6 @@
 use std::char;
 
+use avian2d::dynamics::prelude::MassProperties2d;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bitflags::bitflags;
@@ -31,12 +32,12 @@ impl Default for Temperature {
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct ThrusterCharacteristics {
-    pub minimum_thrust: f32,
-    pub impulse_response: f32,
-    pub variance: f32,
-    pub max_thrust: f32,
-    pub critical_temp: f32, // Temperature at which thruster degrades
-    pub faliure_temp: f32,  // Temperature at which thruster breaks
+    pub minimum_thrust: f32, // Minimum thrust that can be produced by the thruster
+    pub impulse_response: f32, // Rate of change of thrust per seconds
+    pub variance: f32,       // Random noise in thrust
+    pub max_thrust: f32,     // Maximum thrust that can be produced by the thruster
+    pub critical_temp: f32,  // Temperature at which thruster degrades
+    pub faliure_temp: f32,   // Temperature at which thruster breaks
     pub cooling_rate: f32,
     pub heating_rate: f32,
     pub health: f32,
@@ -47,7 +48,7 @@ impl Default for ThrusterCharacteristics {
     fn default() -> Self {
         Self {
             minimum_thrust: 500.0,
-            impulse_response: 200.0,
+            impulse_response: 50000.0,
             variance: 100.0,
             max_thrust: 25000.0,
             critical_temp: 500.0,
@@ -71,7 +72,6 @@ pub enum Status {
 bitflags! {
     #[derive(Component, Debug, Clone, Copy)]
     pub struct ThrusterRoles: u8 {
-        const None = 0b00000000;
         const Forward = 0b00000001;
         const Backward = 0b00000010;
         const Left = 0b00000100;
@@ -79,6 +79,7 @@ bitflags! {
         const Clockwise = 0b00010000;
         const AntiClockwise = 0b00100000;
         const MainDrive = 0b01000000;
+        const None = 0b11111111;
     }
 }
 
@@ -111,7 +112,7 @@ pub fn update_thrusters(
         match *status {
             Status::Active => {
                 **thrust += thruster.impulse_response * time.delta_secs();
-                **thrust += rand::thread_rng().gen_range(-thruster.variance..thruster.variance);
+                // **thrust += rand::thread_rng().gen_range(-thruster.variance..thruster.variance);
                 thrust.0 = thrust.0.clamp(thruster.minimum_thrust, thruster.max_thrust);
                 **temperature += thruster.heating_rate * time.delta_secs();
                 thruster.health -= thruster.degradation_rate;
@@ -141,35 +142,32 @@ pub fn update_thrusters(
 }
 
 pub fn apply_force(
-    q_thrusters: Query<(&Parent, &Thrust, &Status, &GlobalTransform)>,
+    mut q_thrusters: Query<(&Parent, &Thrust, &mut Status, &GlobalTransform)>,
     mut q_parent: Query<(&mut ExternalForce, &GlobalTransform, &ComputedCenterOfMass)>,
 ) {
-    for (parent, thrust, status, thruster_global_transform) in q_thrusters.iter() {
-        let Ok((mut external_force, &parent_global_transform, &parent_center_of_mass)) =
+    for (parent, thrust, status, thruster_global_transform) in q_thrusters.iter_mut() {
+        let Ok((mut external_force, parent_global_transform, parent_center_of_mass)) =
             q_parent.get_mut(parent.get())
         else {
             return;
         };
 
-        match *status {
-            Status::Active => {
-                let force = thruster_global_transform
-                    .rotation()
-                    .mul_vec3(Vec3::Y)
-                    .truncate()
-                    * **thrust;
-                external_force.apply_force_at_point(
-                    force,
-                    thruster_global_transform.translation().truncate(),
-                    parent_global_transform.translation().truncate() + *parent_center_of_mass,
-                );
-            }
-            _ => (),
-        };
+        if let Status::Active = *status {
+            let force = thruster_global_transform
+                .rotation()
+                .mul_vec3(-Vec3::Y)
+                .truncate()
+                * **thrust;
+            external_force.apply_force_at_point(
+                force,
+                thruster_global_transform.translation().truncate(),
+                parent_global_transform.translation().truncate() + **parent_center_of_mass,
+            );
+        }
     }
 }
 
-struct ThrusterPlugin;
+pub struct ThrusterPlugin;
 
 impl Plugin for ThrusterPlugin {
     fn build(&self, app: &mut App) {

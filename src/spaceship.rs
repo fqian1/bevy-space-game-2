@@ -39,11 +39,10 @@ pub struct SpaceshipBundle {
 
 impl Default for SpaceshipBundle {
     fn default() -> Self {
-        let shape = Rectangle::new(15.0, 25.0);
         Self {
             spaceship: SpaceShip,
             rigid_body: RigidBody::Dynamic,
-            collider: Collider::default(),
+            collider: Collider::rectangle(15.0, 25.0),
             transform: Transform::from_translation(Vec3::ZERO),
             external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
             sleeping_disabled: SleepingDisabled,
@@ -53,11 +52,15 @@ impl Default for SpaceshipBundle {
 
 fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
     let spaceship = commands
-        .spawn((Player, SpaceshipBundle { ..default() }))
+        .spawn((
+            Player,
+            Sprite::from_image(assets.ship_base_full_health.clone()),
+            SpaceshipBundle { ..default() },
+        ))
         .id();
 
     let thruster_locations = [
-        Vec2::new(0.0, -12.5),  // Bottom
+        Vec2::new(0.0, -12.5),  // Main Drive
         Vec2::new(-7.5, -12.5), // Bottom left
         Vec2::new(7.5, -12.5),  // Bottom right
         Vec2::new(-7.5, 12.5),  // Top left
@@ -72,15 +75,31 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
         std::f32::consts::FRAC_PI_4 * 7.0, // Top Right
     ];
 
-    for (location, rotation) in thruster_locations.iter().zip(thruster_rotations.iter()) {
-        commands.spawn((Thruster, ThrusterBundle {
-            transform: Transform::from_translation(location.extend(0.0))
-                .with_rotation(Quat::from_rotation_z(*rotation)),
-            ..default()
-        }));
-    }
+    let thruster_roles = [
+        ThrusterRoles::MainDrive,
+        ThrusterRoles::Forward | ThrusterRoles::Right | ThrusterRoles::AntiClockwise,
+        ThrusterRoles::Forward | ThrusterRoles::Left | ThrusterRoles::Clockwise,
+        ThrusterRoles::Backward | ThrusterRoles::Right | ThrusterRoles::Clockwise,
+        ThrusterRoles::Backward | ThrusterRoles::Left | ThrusterRoles::AntiClockwise,
+    ];
 
-    commands.entity(spaceship).add_children(&[]);
+    let thrusters: Vec<Entity> = (0..5)
+        .map(|i| {
+            commands
+                .spawn((
+                    ThrusterBundle {
+                        transform: Transform::from_translation(thruster_locations[i].extend(0.0))
+                            .with_rotation(Quat::from_rotation_z(thruster_rotations[i])),
+                        roles: thruster_roles[i],
+                        ..default()
+                    },
+                    Sprite::from_image(assets.ship_engine_base.clone()),
+                ))
+                .id()
+        })
+        .collect();
+
+    commands.entity(spaceship).add_children(&thrusters);
 }
 
 fn spaceship_control(
