@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
 use crate::controller::PlayerInputEvents;
+use crate::fuel::*;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 use crate::thrusters::{Status, Thruster, ThrusterBundle, ThrusterRoles};
@@ -29,7 +30,8 @@ pub struct Health {
 
 #[derive(Bundle)]
 pub struct SpaceshipBundle {
-    pub spaceship: SpaceShip,
+    pub drive_fuel_capacity: DriveFuelCapacity,
+    pub thruster_fuel_capacity: ThrusterFuelCapacity,
     pub rigid_body: RigidBody,
     pub collider: Collider,
     pub transform: Transform,
@@ -40,7 +42,8 @@ pub struct SpaceshipBundle {
 impl Default for SpaceshipBundle {
     fn default() -> Self {
         Self {
-            spaceship: SpaceShip,
+            thruster_fuel_capacity: ThrusterFuelCapacity(1000.0),
+            drive_fuel_capacity: DriveFuelCapacity(1000.0),
             rigid_body: RigidBody::Dynamic,
             collider: Collider::rectangle(15.0, 25.0),
             transform: Transform::from_translation(Vec3::ZERO),
@@ -105,7 +108,7 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
 fn spaceship_control(
     q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
     mut q_thrusters: Query<(&mut Status, &ThrusterRoles)>,
-    mut input_event_reader: EventReader<PlayerInputEvents>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let Ok(thrusters) = q_spaceship.get_single() else {
         return;
@@ -116,43 +119,60 @@ fn spaceship_control(
             let Ok((mut status, thruster_role)) = q_thrusters.get_mut(thruster) else {
                 return;
             };
+            if role.contains(ThrusterRoles::None) {
+                *status = Status::Inactive;
+                continue;
+            }
             if thruster_role.contains(*role) {
                 *status = Status::Active;
-            } else {
-                *status = Status::Inactive;
             }
         }
     };
 
-    for event in input_event_reader.read() {
-        match event {
-            PlayerInputEvents::Up => {
-                set_status(&ThrusterRoles::Forward);
-            }
-            PlayerInputEvents::Left => {
-                set_status(&ThrusterRoles::Left);
-            }
-            PlayerInputEvents::Down => {
-                set_status(&ThrusterRoles::Backward);
-            }
-            PlayerInputEvents::Right => {
-                set_status(&ThrusterRoles::Right);
-            }
-            PlayerInputEvents::MainDrive => {
-                set_status(&ThrusterRoles::MainDrive);
-            }
-            PlayerInputEvents::RotateClockwise => {
-                set_status(&ThrusterRoles::Clockwise);
-            }
-            PlayerInputEvents::RotateAntiClockwise => {
-                set_status(&ThrusterRoles::AntiClockwise);
-            }
-            // PlayerInputEventss::FireMissile =>
-            // PlayerInputEventss::FirePdc =>
-            // PlayerInputEventss::ToggleAutotrack =>
-            // PlayerInputEventss::FireRailgun =>
-            _ => set_status(&ThrusterRoles::None),
-        }
+    if keyboard_input.pressed(KeyCode::KeyW) {
+        set_status(&ThrusterRoles::Forward);
+        info!("Forward");
+    }
+    if keyboard_input.pressed(KeyCode::KeyA) {
+        set_status(&ThrusterRoles::Left);
+    }
+    if keyboard_input.pressed(KeyCode::KeyS) {
+        set_status(&ThrusterRoles::Backward);
+    }
+    if keyboard_input.pressed(KeyCode::KeyD) {
+        set_status(&ThrusterRoles::Right);
+    }
+    if keyboard_input.pressed(KeyCode::Space) {
+        set_status(&ThrusterRoles::MainDrive);
+    }
+    if keyboard_input.pressed(KeyCode::KeyE) {
+        set_status(&ThrusterRoles::Clockwise);
+    }
+    if keyboard_input.pressed(KeyCode::KeyQ) {
+        set_status(&ThrusterRoles::AntiClockwise);
+    }
+    // if keyboard_input.pressed(KeyCode::KeyF) {
+    //     set_status(&ThrusterRoles::Forward);
+    // }
+    // if keyboard_input.pressed(KeyCode::KeyR) {
+    //     set_status(&ThrusterRoles::Forward);
+    // }
+    // if keyboard_input.pressed(KeyCode::KeyT) {
+    //     set_status(&ThrusterRoles::Forward);
+    // }
+    // if keyboard_input.pressed(KeyCode::KeyG) {
+    //     set_status(&ThrusterRoles::Forward);
+    // }
+    if keyboard_input.any_just_released([
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::Space,
+        KeyCode::KeyE,
+        KeyCode::KeyQ,
+    ]) {
+        set_status(&ThrusterRoles::None);
     }
 }
 

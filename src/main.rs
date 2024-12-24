@@ -16,6 +16,7 @@ mod cleanup;
 mod collision;
 mod controller;
 mod debug;
+mod fuel;
 mod health;
 mod projectiles;
 mod schedule;
@@ -45,7 +46,7 @@ fn main() {
                 primary_window: Some(Window {
                     title: "Space Game".to_string(),
                     name: Some("Space Game".to_string()),
-                    resolution: (500.0, 300.0).into(),
+                    resolution: (1024.0, 720.0).into(),
                     fit_canvas_to_parent: true,
                     prevent_default_event_handling: false,
                     window_theme: Some(WindowTheme::Dark),

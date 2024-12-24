@@ -1,13 +1,9 @@
-use std::char;
-
-use avian2d::dynamics::prelude::MassProperties2d;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use bitflags::bitflags;
 use rand::Rng;
 
 use crate::schedule::*;
-use crate::state::GameState;
 
 #[derive(Component, Debug)]
 pub struct Thruster;
@@ -38,10 +34,10 @@ pub struct ThrusterCharacteristics {
     pub max_thrust: f32,     // Maximum thrust that can be produced by the thruster
     pub critical_temp: f32,  // Temperature at which thruster degrades
     pub faliure_temp: f32,   // Temperature at which thruster breaks
-    pub cooling_rate: f32,
-    pub heating_rate: f32,
+    pub cooling_rate: f32,   // cooling rate per second
+    pub heating_rate: f32,   // heating rate per unit thrust
     pub health: f32,
-    pub degradation_rate: f32,
+    pub degradation_rate: f32, // Rate of degradation of thruster health per unit of thrust
 }
 
 impl Default for ThrusterCharacteristics {
@@ -106,16 +102,15 @@ pub fn update_thrusters(
         &mut ThrusterCharacteristics,
         &mut Status,
     )>,
-    time: Res<Time>,
 ) {
     for (mut thrust, mut temperature, mut thruster, mut status) in query.iter_mut() {
         match *status {
             Status::Active => {
-                **thrust += thruster.impulse_response * time.delta_secs();
+                **thrust += thruster.impulse_response;
                 // **thrust += rand::thread_rng().gen_range(-thruster.variance..thruster.variance);
                 thrust.0 = thrust.0.clamp(thruster.minimum_thrust, thruster.max_thrust);
-                **temperature += thruster.heating_rate * time.delta_secs();
-                thruster.health -= thruster.degradation_rate;
+                **temperature += thruster.heating_rate * **thrust;
+                thruster.health -= thruster.degradation_rate * **thrust;
                 if **temperature > thruster.faliure_temp {
                     thruster.health = 0.0;
                 } else if **temperature > thruster.critical_temp {
@@ -129,13 +124,13 @@ pub fn update_thrusters(
                 **thrust = 0.0;
                 let radiative_cooling =
                     thruster.cooling_rate * (temperature.0.powi(4) - 2.7_f32.powi(4));
-                **temperature -= radiative_cooling * time.delta_secs();
+                **temperature -= radiative_cooling;
             }
             Status::Broken => {
                 **thrust = 0.0;
                 let radiative_cooling =
                     thruster.cooling_rate * (temperature.0.powi(4) - 2.7_f32.powi(4));
-                **temperature -= radiative_cooling * time.delta_secs();
+                **temperature -= radiative_cooling;
             }
         }
     }
@@ -172,6 +167,6 @@ pub struct ThrusterPlugin;
 impl Plugin for ThrusterPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedUpdate, apply_force.in_set(InGameSet::Physics))
-            .add_systems(Update, update_thrusters.in_set(InGameSet::GameLogic));
+            .add_systems(FixedUpdate, update_thrusters.in_set(InGameSet::GameLogic));
     }
 }
