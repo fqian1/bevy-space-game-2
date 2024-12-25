@@ -30,9 +30,9 @@ fn start_game(mut next_state: ResMut<NextState<GameState>>) {
     next_state.set(GameState::InGame);
 }
 
-pub struct StatePlugin;
+pub struct GameStatePlugin;
 
-impl Plugin for StatePlugin {
+impl Plugin for GameStatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .insert_state(GameState::InGame)

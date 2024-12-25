@@ -6,6 +6,9 @@ use crate::thrusters::*;
 #[derive(Component, Debug)]
 pub struct Bullet;
 
+#[derive(Component, Debug)]
+pub struct Health(pub f32);
+
 #[derive(Bundle)]
 pub struct BulletBundle {
     pub rigid_body: RigidBody,
@@ -14,6 +17,7 @@ pub struct BulletBundle {
     pub transform: Transform,
     pub external_force: ExternalForce,
     pub restitution: Restitution,
+    pub health: Health,
 }
 
 impl Default for BulletBundle {
@@ -25,6 +29,7 @@ impl Default for BulletBundle {
             transform: Transform::default(),
             external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
             restitution: Restitution::new(0.8),
+            health: Health(100.0),
         }
     }
 }
@@ -56,7 +61,7 @@ impl Default for TorpedoBundle {
             mass: Mass(1.0),
             transform: Transform::default(),
             external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
-            restitution: Restitution::new(0.8),
+            restitution: Restitution::new(0.0),
         }
     }
 }

@@ -3,10 +3,9 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
-use crate::controller::PlayerInputEvents;
 use crate::fuel::*;
+use crate::game_state::GameState;
 use crate::schedule::InGameSet;
-use crate::state::GameState;
 use crate::thrusters::{Status, Thruster, ThrusterBundle, ThrusterRoles};
 use crate::weapons::*;
 
@@ -113,6 +112,7 @@ fn spaceship_control(
     let Ok(thrusters) = q_spaceship.get_single() else {
         return;
     };
+    info!("Spaceship: {:?}", thrusters);
 
     let mut set_status = |role: &ThrusterRoles| {
         for &thruster in thrusters.iter() {
@@ -130,8 +130,11 @@ fn spaceship_control(
     };
 
     if keyboard_input.pressed(KeyCode::KeyW) {
-        set_status(&ThrusterRoles::Forward);
         info!("Forward");
+    }
+
+    if keyboard_input.pressed(KeyCode::KeyW) {
+        set_status(&ThrusterRoles::Forward);
     }
     if keyboard_input.pressed(KeyCode::KeyA) {
         set_status(&ThrusterRoles::Left);

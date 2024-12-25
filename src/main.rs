@@ -14,14 +14,15 @@ mod asset_loader;
 mod camera;
 mod cleanup;
 mod collision;
-mod controller;
 mod debug;
+mod durability;
 mod fuel;
-mod health;
+mod game_state;
 mod projectiles;
 mod schedule;
 mod spaceship;
-mod state;
+mod system_status;
+mod temperature;
 mod thrusters;
 mod weapons;
 
@@ -29,14 +30,13 @@ use asset_loader::AssetLoaderPlugin;
 use camera::CameraPlugin;
 // use cleanup::CleanupPlugin;
 // use collision::CollisionPlugin;
-use controller::ControllerPlugin;
 use debug::DebugPlugin;
-// use health::HealthPlugin;
 // use projectiles::ProjectilesPlugin;
+use game_state::GameStatePlugin;
 use schedule::SchedulePlugin;
 use spaceship::SpaceshipPlugin;
-use state::StatePlugin;
 // use weapons::WeaponsPlugin;
+use durability::DurabilityPlugin;
 use thrusters::ThrusterPlugin;
 
 fn main() {
@@ -66,12 +66,12 @@ fn main() {
             CameraPlugin,
             // CleanupPlugin,
             // CollisionPlugin,
-            ControllerPlugin,
-            DebugPlugin,
+            // ControllerPlugin,
+            // DebugPlugin,
             // HealthPlugin,
             // ProjectilesPlugin,
             SchedulePlugin,
-            StatePlugin,
+            GameStatePlugin,
             SpaceshipPlugin,
             // WeaponsPlugin,
             HanabiPlugin,
