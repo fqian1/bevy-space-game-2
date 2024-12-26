@@ -2,11 +2,11 @@ use std::fmt::Debug;
 
 use avian2d::prelude::*;
 use bevy::{
-    core::FrameCount,
-    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    // core::FrameCount,
+    // diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     prelude::*,
     window::{CursorGrabMode, PresentMode, SystemCursorIcon, WindowLevel, WindowTheme},
-    winit::cursor::CursorIcon,
+    // winit::cursor::CursorIcon,
 };
 use bevy_hanabi::prelude::*;
 
@@ -67,13 +67,14 @@ fn main() {
             // CleanupPlugin,
             // CollisionPlugin,
             // ControllerPlugin,
-            // DebugPlugin,
+            DebugPlugin,
             // HealthPlugin,
             // ProjectilesPlugin,
             SchedulePlugin,
             GameStatePlugin,
             SpaceshipPlugin,
             // WeaponsPlugin,
+            DurabilityPlugin,
             HanabiPlugin,
             ThrusterPlugin,
         ))

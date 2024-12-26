@@ -41,9 +41,11 @@ fn update_temperature(
     for (mut temperature, thermal_characteristics, mut system_status) in query.iter_mut() {
         **temperature -= thermal_characteristics.cooling_rate * (**temperature - 2.7_f32.powi(4));
         if **temperature > thermal_characteristics.faliure_temp {
+            info!("System broken");
             *system_status = SystemStatus::Broken;
         } else if **temperature > thermal_characteristics.critical_temp {
             *system_status = SystemStatus::Vulnerable;
+            info!("system vulnerable");
         }
     }
 }

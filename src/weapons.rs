@@ -1,77 +1,131 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
+use crate::projectiles::*;
+use crate::projectiles::*;
+use crate::schedule::InGameSet;
+use crate::system_status::SystemStatus;
+
 #[derive(Component, Debug)]
-pub struct WeaponSystem {
+pub struct WeaponCharacteristics {
     rate_of_fire: f32,
-    barrel_length: f32,
+    muzzle_location: Vec2,
+    weapon_power: f32,
     power_consumption: f32,
     spread: f32,
-    health: f32,
-    critical_temp: f32,
-    faliure_temp: f32,
-    cooling_rate: f32,
-    heating_rate: f32,
-    degradation_rate: f32,
     jam_chance: f32,
+    time_since_last_fired: f32,
 }
 
-impl Default for WeaponSystem {
-    fn default() -> Self {
-        WeaponSystem {
-            rate_of_fire: 0.1,
-            barrel_length: 1.0,
-            power_consumption: 1000.0,
-            spread: 0.1,
-            health: 100.0,
-            critical_temp: 500.0,
-            faliure_temp: 700.0,
-            cooling_rate: 2.0,
-            heating_rate: 25.0,
-            degradation_rate: 0.01,
-            jam_chance: 0.001,
-        }
-    }
-}
-
-#[derive(Component)]
-pub enum Status {
-    Inactive,
-    Active,
-    Jammed,
-    Broken,
-}
+#[derive(Component, Debug)]
+pub struct Railgun;
 
 #[derive(Bundle)]
-pub struct GatlingGun {
+pub struct RailgunBundle {
+    pub marker: Railgun,
     pub transform: Transform,
-    pub status: Status,
-    pub weapon_system: WeaponSystem,
+    pub collider: Collider,
+    pub weapon_characteristics: WeaponCharacteristics,
+    pub system_status: SystemStatus,
 }
 
-impl Default for GatlingGun {
+impl Default for RailgunBundle {
     fn default() -> Self {
-        GatlingGun {
+        Self {
+            marker: Railgun,
             transform: Transform::default(),
-            weapon_system: WeaponSystem::default(),
-            status: Status::Inactive,
+            collider: Collider::rectangle(2.0, 4.0),
+            weapon_characteristics: WeaponCharacteristics {
+                rate_of_fire: 1.0,
+                muzzle_location: Vec2::ZERO,
+                weapon_power: 100.0,
+                power_consumption: 10.0,
+                spread: 0.0,
+                jam_chance: 0.0,
+                time_since_last_fired: 0.0,
+            },
+            system_status: SystemStatus::Ready,
         }
     }
 }
 
-#[derive(Bundle)]
-pub struct Railgun {
-    pub transform: Transform,
-    pub weapon_system: WeaponSystem,
+pub fn fire_railgun(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(&Transform, &WeaponCharacteristics, &mut SystemStatus)>,
+) {
+    for (transform, weapon_characteristics, mut system_status) in query.iter_mut() {
+        match *system_status {
+            SystemStatus::Active => commands.spawn(SlugBundle {
+                transform: Transform::from_translation(
+                    transform.translation + weapon_characteristics.muzzle_location,
+                ),
+                external_impulse: External..Default::default(),
+            }),
+        }
+    }
 }
 
-#[derive(Bundle)]
-pub struct TorpedoTube {
-    pub transform: Transform,
-    pub weapon_system: WeaponSystem,
-}
+#[derive(Component, Debug)]
+pub struct GatlingGun;
 
 #[derive(Bundle)]
-pub struct TorpedoEjector {
+pub struct GatlingGunBundle {
+    pub marker: GatlingGun,
     pub transform: Transform,
-    pub sprite: Sprite,
+    pub collider: Collider,
+    pub weapon_characteristics: WeaponCharacteristics,
+    pub system_status: SystemStatus,
+}
+
+impl Default for GatlingGunBundle {
+    fn default() -> Self {
+        Self {
+            marker: GatlingGun,
+            transform: Transform::default(),
+            collider: Collider::rectangle(2.0, 4.0),
+            weapon_characteristics: WeaponCharacteristics {
+                rate_of_fire: 10.0,
+                muzzle_location: Vec2::ZERO,
+                weapon_power: 10.0,
+                power_consumption: 1.0,
+                spread: 1.0,
+                jam_chance: 0.1,
+                time_since_last_fired: 0.0,
+            },
+            system_status: SystemStatus::Ready,
+        }
+    }
+}
+
+#[derive(Component, Debug)]
+pub struct TorpedoLauncher;
+
+#[derive(Bundle)]
+pub struct TorpedoLauncherBundle {
+    pub marker: TorpedoLauncher,
+    pub transform: Transform,
+    pub collider: Collider,
+    pub weapon_characteristics: WeaponCharacteristics,
+    pub system_status: SystemStatus,
+}
+
+impl Default for TorpedoLauncherBundle {
+    fn default() -> Self {
+        Self {
+            marker: TorpedoLauncher,
+            transform: Transform::default(),
+            collider: Collider::rectangle(4.0, 8.0),
+            weapon_characteristics: WeaponCharacteristics {
+                rate_of_fire: 1.0,
+                muzzle_location: Vec2::ZERO,
+                weapon_power: 100.0,
+                power_consumption: 10.0,
+                spread: 0.0,
+                jam_chance: 0.0,
+                time_since_last_fired: 0.0,
+            },
+            system_status: SystemStatus::Ready,
+        }
+    }
 }

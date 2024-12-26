@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component, Debug, Default, Clone, Copy)]
+#[derive(Component, Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum SystemStatus {
     Active,
     #[default]
@@ -8,4 +8,5 @@ pub enum SystemStatus {
     Vulnerable,
     Broken,
     Repairing,
+    Loading,
 }

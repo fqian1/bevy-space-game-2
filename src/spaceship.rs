@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
 use crate::fuel::*;
-use crate::game_state::GameState;
 use crate::schedule::InGameSet;
-use crate::thrusters::{Status, Thruster, ThrusterBundle, ThrusterRoles};
+use crate::system_status::SystemStatus;
+use crate::thrusters::{Thruster, ThrusterBundle, ThrusterRoles};
 use crate::weapons::*;
 
 #[derive(Component, Debug)]
@@ -17,15 +17,6 @@ pub struct Player;
 
 #[derive(Component, Debug)]
 pub struct Ai;
-
-#[derive(Component, Debug)]
-pub struct Inactive;
-
-#[derive(Component, Debug, Default, Deref, DerefMut)]
-pub struct Health {
-    #[deref]
-    pub value: f32,
-}
 
 #[derive(Bundle)]
 pub struct SpaceshipBundle {
@@ -52,12 +43,24 @@ impl Default for SpaceshipBundle {
     }
 }
 
-fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
+fn spawn_player_spaceship(
+    mut commands: Commands,
+    assets: Res<ImageAssets>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    let rectangle = Rectangle::new(15.0, 25.0);
+
     let spaceship = commands
         .spawn((
             Player,
-            Sprite::from_image(assets.ship_base_full_health.clone()),
-            SpaceshipBundle { ..default() },
+            SpaceShip,
+            SpaceshipBundle {
+                collider: rectangle.collider(),
+                ..default()
+            },
+            Mesh2d(meshes.add(rectangle)),
+            MeshMaterial2d(materials.add(Color::srgb(0.8, 0.8, 0.8))),
         ))
         .id();
 
@@ -95,7 +98,8 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
                         roles: thruster_roles[i],
                         ..default()
                     },
-                    Sprite::from_image(assets.ship_engine_base.clone()),
+                    Mesh2d(meshes.add(Rectangle::new(2.0, 2.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(0.8, 0.8, 0.8))),
                 ))
                 .id()
         })
@@ -106,13 +110,12 @@ fn spawn_player_spaceship(mut commands: Commands, assets: Res<ImageAssets>) {
 
 fn spaceship_control(
     q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
-    mut q_thrusters: Query<(&mut Status, &ThrusterRoles)>,
+    mut q_thrusters: Query<(&mut SystemStatus, &ThrusterRoles)>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let Ok(thrusters) = q_spaceship.get_single() else {
         return;
     };
-    info!("Spaceship: {:?}", thrusters);
 
     let mut set_status = |role: &ThrusterRoles| {
         for &thruster in thrusters.iter() {
@@ -120,19 +123,14 @@ fn spaceship_control(
                 return;
             };
             if role.contains(ThrusterRoles::None) {
-                *status = Status::Inactive;
+                *status = SystemStatus::Broken;
                 continue;
             }
             if thruster_role.contains(*role) {
-                *status = Status::Active;
+                *status = SystemStatus::Active;
             }
         }
     };
-
-    if keyboard_input.pressed(KeyCode::KeyW) {
-        info!("Forward");
-    }
-
     if keyboard_input.pressed(KeyCode::KeyW) {
         set_status(&ThrusterRoles::Forward);
     }

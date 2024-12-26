@@ -52,6 +52,7 @@ fn update_durability(
             _ => {
                 if **durability <= 0.0 {
                     *system_status = SystemStatus::Broken;
+                    info!("system broken durability");
                 }
             }
         }
