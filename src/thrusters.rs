@@ -5,7 +5,6 @@ use rand::Rng;
 
 use crate::durability::*;
 use crate::schedule::*;
-use crate::system_status::SystemStatus;
 use crate::temperature::*;
 
 #[derive(Component, Debug)]
@@ -16,7 +15,7 @@ pub struct Thrust(f32);
 
 impl Default for Thrust {
     fn default() -> Self {
-        Self(0.0)
+        Self(5000.0)
     }
 }
 
@@ -37,6 +36,14 @@ impl Default for ThrusterCharacteristics {
             max_thrust: 25000.0,
         }
     }
+}
+
+#[derive(Component, Debug, Default, Clone, Copy)]
+pub enum ThrusterState {
+    Active,
+    #[default]
+    Ready,
+    Inactive,
 }
 
 bitflags! {
@@ -65,7 +72,7 @@ pub struct ThrusterBundle {
     pub thruster_characteristics: ThrusterCharacteristics,
     pub transform: Transform,
     pub roles: ThrusterRoles,
-    pub status: SystemStatus,
+    pub thruster_status: ThrusterState,
 }
 
 pub fn update_thrusters(
@@ -74,12 +81,12 @@ pub fn update_thrusters(
         &mut Temperature,
         &mut Durability,
         &mut ThrusterCharacteristics,
-        &mut SystemStatus,
+        &mut ThrusterState,
     )>,
 ) {
     for (mut thrust, mut temp, mut durability, thruster, status) in query.iter_mut() {
         match *status {
-            SystemStatus::Active => {
+            ThrusterState::Active => {
                 **thrust += thruster.impulse_response;
                 **thrust = thrust.clamp(thruster.minimum_thrust, thruster.max_thrust);
                 // **thrust += rand::thread_rng().gen_range(-thruster.variance..thruster.variance);
@@ -94,7 +101,7 @@ pub fn update_thrusters(
 }
 
 pub fn apply_force(
-    mut q_thrusters: Query<(&Parent, &Thrust, &mut SystemStatus, &GlobalTransform)>,
+    mut q_thrusters: Query<(&Parent, &Thrust, &mut ThrusterState, &GlobalTransform)>,
     mut q_parent: Query<(&mut ExternalForce, &GlobalTransform, &ComputedCenterOfMass)>,
 ) {
     for (parent, thrust, thruster_status, thruster_global_transform) in q_thrusters.iter_mut() {
@@ -104,7 +111,7 @@ pub fn apply_force(
             return;
         };
 
-        if let SystemStatus::Active = *thruster_status {
+        if let ThrusterState::Active = *thruster_status {
             let force = thruster_global_transform
                 .rotation()
                 .mul_vec3(-Vec3::Y)
@@ -114,6 +121,11 @@ pub fn apply_force(
                 force,
                 thruster_global_transform.translation().truncate(),
                 parent_global_transform.translation().truncate() + **parent_center_of_mass,
+            );
+            info!(
+                "Applying force {:?} at point {:?}",
+                force,
+                thruster_global_transform.translation().truncate()
             );
         }
     }

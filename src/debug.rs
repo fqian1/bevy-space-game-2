@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 use crate::schedule::InGameSet;
 use crate::spaceship::{Player, SpaceShip};
-use crate::system_status::SystemStatus;
 use crate::thrusters::ThrusterRoles;
+use crate::thrusters::ThrusterState;
 
 fn print_position(query: Query<(Entity, &Transform), (With<SpaceShip>, With<Player>)>) {
     for (entity, transform) in query.iter() {
@@ -14,7 +14,7 @@ fn print_position(query: Query<(Entity, &Transform), (With<SpaceShip>, With<Play
     }
 }
 
-fn print_active_thrusters(query: Query<(Entity, &ThrusterRoles, &SystemStatus)>) {
+fn print_active_thrusters(query: Query<(Entity, &ThrusterRoles, &ThrusterState)>) {
     for (entity, roles, status) in query.iter() {
         info!("Thruster: {:?}: {:?}", roles, status);
     }
@@ -25,6 +25,6 @@ pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         // app.add_systems(Update, print_position.after(InGameSet::GameLogic));
-        app.add_systems(Update, print_active_thrusters.after(InGameSet::GameLogic));
+        // app.add_systems(Update, print_active_thrusters.after(InGameSet::GameLogic));
     }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::asset_loader::ImageAssets;
 use crate::fuel::*;
 use crate::schedule::InGameSet;
-use crate::system_status::SystemStatus;
+use crate::thrusters::ThrusterState;
 use crate::thrusters::{Thruster, ThrusterBundle, ThrusterRoles};
 use crate::weapons::*;
 
@@ -105,56 +105,87 @@ fn spawn_player_spaceship(
         })
         .collect();
 
-    commands.entity(spaceship).add_children(&thrusters);
+    let gatling_gun = commands
+        .spawn((
+            WeaponBundle {
+                weapon_type: WeaponType::GatlingGun,
+                transform: Transform::from_translation(Vec3::new(7.5, 0.0, 0.0))
+                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
+                weapon_state: WeaponState::Ready,
+                ..default()
+            },
+            Mesh2d(meshes.add(Rectangle::new(2.0, 4.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.3, 0.4))),
+        ))
+        .id();
+
+    commands
+        .entity(spaceship)
+        .add_children(&thrusters)
+        .add_child(gatling_gun);
 }
 
 fn spaceship_control(
     q_spaceship: Query<&Children, (With<Player>, With<SpaceShip>)>,
-    mut q_thrusters: Query<(&mut SystemStatus, &ThrusterRoles)>,
+    mut q_thrusters: Query<(&mut ThrusterState, &ThrusterRoles)>,
+    mut q_weapons: Query<(&mut WeaponState, &WeaponType)>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    let Ok(thrusters) = q_spaceship.get_single() else {
+    let Ok(children) = q_spaceship.get_single() else {
         return;
     };
 
-    let mut set_status = |role: &ThrusterRoles| {
-        for &thruster in thrusters.iter() {
+    let mut set_weapon_state = |weapon_type: &WeaponType| {
+        for &child in children.iter() {
+            let Ok((mut weapon_state, q_weapon_type)) = q_weapons.get_mut(child) else {
+                continue;
+            };
+            info!("found weapon");
+            if weapon_type == q_weapon_type && *weapon_state == WeaponState::Ready {
+                *weapon_state = WeaponState::Firing;
+            }
+        }
+    };
+
+    let mut set_thruster_status = |role: &ThrusterRoles| {
+        for &thruster in children.iter() {
             let Ok((mut status, thruster_role)) = q_thrusters.get_mut(thruster) else {
                 return;
             };
             if role.contains(ThrusterRoles::None) {
-                *status = SystemStatus::Broken;
+                *status = ThrusterState::Inactive;
                 continue;
             }
             if thruster_role.contains(*role) {
-                *status = SystemStatus::Active;
+                *status = ThrusterState::Active;
             }
         }
     };
+
     if keyboard_input.pressed(KeyCode::KeyW) {
-        set_status(&ThrusterRoles::Forward);
+        set_thruster_status(&ThrusterRoles::Forward);
     }
     if keyboard_input.pressed(KeyCode::KeyA) {
-        set_status(&ThrusterRoles::Left);
+        set_thruster_status(&ThrusterRoles::Left);
     }
     if keyboard_input.pressed(KeyCode::KeyS) {
-        set_status(&ThrusterRoles::Backward);
+        set_thruster_status(&ThrusterRoles::Backward);
     }
     if keyboard_input.pressed(KeyCode::KeyD) {
-        set_status(&ThrusterRoles::Right);
+        set_thruster_status(&ThrusterRoles::Right);
     }
     if keyboard_input.pressed(KeyCode::Space) {
-        set_status(&ThrusterRoles::MainDrive);
+        set_thruster_status(&ThrusterRoles::MainDrive);
     }
     if keyboard_input.pressed(KeyCode::KeyE) {
-        set_status(&ThrusterRoles::Clockwise);
+        set_thruster_status(&ThrusterRoles::Clockwise);
     }
     if keyboard_input.pressed(KeyCode::KeyQ) {
-        set_status(&ThrusterRoles::AntiClockwise);
+        set_thruster_status(&ThrusterRoles::AntiClockwise);
     }
-    // if keyboard_input.pressed(KeyCode::KeyF) {
-    //     set_status(&ThrusterRoles::Forward);
-    // }
+    if keyboard_input.pressed(KeyCode::KeyF) {
+        set_weapon_state(&WeaponType::GatlingGun);
+    }
     // if keyboard_input.pressed(KeyCode::KeyR) {
     //     set_status(&ThrusterRoles::Forward);
     // }
@@ -173,7 +204,10 @@ fn spaceship_control(
         KeyCode::KeyE,
         KeyCode::KeyQ,
     ]) {
-        set_status(&ThrusterRoles::None);
+        set_thruster_status(&ThrusterRoles::None);
+    }
+    if keyboard_input.any_just_released([KeyCode::KeyF]) {
+        set_weapon_state(&WeaponType::GatlingGun);
     }
 }
 

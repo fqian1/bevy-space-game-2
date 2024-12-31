@@ -10,6 +10,7 @@ pub struct ThrusterFuelCapacity(pub f32);
 #[derive(Bundle)]
 pub struct DriveFuelTankBundle {
     drive_fuel_capacity: DriveFuelCapacity,
+    thrust_fuel_capacity: ThrusterFuelCapacity,
     collider: Collider,
     mass: Mass,
 }

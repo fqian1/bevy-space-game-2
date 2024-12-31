@@ -1,14 +1,24 @@
 use bevy::prelude::*;
+use bitflags::bitflags;
 
 use crate::schedule::InGameSet;
-use crate::system_status::SystemStatus;
 
 #[derive(Component, Debug, Deref, DerefMut)]
-pub struct Durability(pub f32);
+pub struct Durability(f32);
 
 impl Default for Durability {
     fn default() -> Self {
         Durability(100.0)
+    }
+}
+
+bitflags! {
+    #[derive(Component, Debug, Default, Clone, Copy)]
+    pub struct DurabilityState: u8 {
+        const HEALTHY = 0b0001;
+        const BROKEN = 0b0010;
+        const VULNERABLE = 0b0100;
+        const REPAIRING = 0b1000;
     }
 }
 
@@ -37,24 +47,18 @@ fn update_durability(
     mut query: Query<(
         &mut Durability,
         &DurabilityCharacteristics,
-        &mut SystemStatus,
+        &mut DurabilityState,
     )>,
 ) {
-    for (mut durability, durability_characteristics, mut system_status) in query.iter_mut() {
-        match *system_status {
-            SystemStatus::Repairing => {
-                **durability += durability_characteristics.repair_rate;
-                if **durability >= durability_characteristics.max_durability {
-                    **durability = durability_characteristics.max_durability;
-                    *system_status = SystemStatus::Ready;
-                }
+    for (mut durability, durability_characteristics, mut durability_state) in query.iter_mut() {
+        if durability_state.contains(DurabilityState::REPAIRING) {
+            **durability += durability_characteristics.repair_rate;
+            if **durability >= durability_characteristics.max_durability {
+                **durability = durability_characteristics.max_durability;
+                *durability_state &= !DurabilityState::REPAIRING;
             }
-            _ => {
-                if **durability <= 0.0 {
-                    *system_status = SystemStatus::Broken;
-                    info!("system broken durability");
-                }
-            }
+        } else if **durability <= 0.0 {
+            *durability_state = DurabilityState::BROKEN;
         }
     }
 }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
+use crate::durability::DurabilityState;
 use crate::schedule::InGameSet;
-use crate::system_status::SystemStatus;
 
 #[derive(Component, Debug, Deref, DerefMut)]
 pub struct Temperature(f32);
@@ -36,15 +36,20 @@ pub struct TemperatureBundle {
 }
 
 fn update_temperature(
-    mut query: Query<(&mut Temperature, &ThermalCharacteristics, &mut SystemStatus)>,
+    mut query: Query<(
+        &mut Temperature,
+        &ThermalCharacteristics,
+        &mut DurabilityState,
+    )>,
 ) {
     for (mut temperature, thermal_characteristics, mut system_status) in query.iter_mut() {
         **temperature -= thermal_characteristics.cooling_rate * (**temperature - 2.7_f32.powi(4));
         if **temperature > thermal_characteristics.faliure_temp {
             info!("System broken");
-            *system_status = SystemStatus::Broken;
-        } else if **temperature > thermal_characteristics.critical_temp {
-            *system_status = SystemStatus::Vulnerable;
+            *system_status = DurabilityState::BROKEN;
+        }
+        if **temperature > thermal_characteristics.critical_temp {
+            *system_status |= DurabilityState::VULNERABLE;
             info!("system vulnerable");
         }
     }

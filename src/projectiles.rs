@@ -7,6 +7,9 @@ use crate::thrusters::*;
 #[derive(Component, Debug)]
 pub struct Bullet;
 
+#[derive(Component, Debug, Default, Deref, DerefMut)]
+pub struct Payload(Option<f32>);
+
 #[derive(Bundle)]
 pub struct BulletBundle {
     pub marker: Bullet,
@@ -14,8 +17,9 @@ pub struct BulletBundle {
     pub collider: Collider,
     pub mass: Mass,
     pub transform: Transform,
-    pub external_impulse: ExternalForce,
+    pub external_impulse: ExternalImpulse,
     pub restitution: Restitution,
+    pub payload: Payload,
 }
 
 impl Default for BulletBundle {
@@ -24,20 +28,17 @@ impl Default for BulletBundle {
             marker: Bullet,
             rigid_body: RigidBody::Dynamic,
             collider: Collider::rectangle(2.0, 4.0),
-            mass: Mass(1.0),
+            mass: Mass(0.1),
             transform: Transform::default(),
-            external_impulse: ExternalForce::new(Vec2::ZERO).with_persistence(false),
+            external_impulse: ExternalImpulse::new(Vec2::Y * 100.0),
             restitution: Restitution::new(0.8),
+            payload: Payload(None),
         }
     }
 }
 
 #[derive(Component, Debug)]
 pub struct Torpedo;
-
-#[derive(Component, Debug, Default, Deref, DerefMut)]
-pub struct Payload(pub f32);
-
 #[derive(Bundle)]
 pub struct TorpedoBundle {
     pub marker: Torpedo,
@@ -57,7 +58,7 @@ impl Default for TorpedoBundle {
             rigid_body: RigidBody::Dynamic,
             collider: Collider::rectangle(4.0, 8.0),
             mass: Mass(1.0),
-            payload: Payload(100.0),
+            payload: Payload(None),
             transform: Transform::default(),
             external_force: ExternalForce::new(Vec2::ZERO).with_persistence(false),
             restitution: Restitution::new(0.8),

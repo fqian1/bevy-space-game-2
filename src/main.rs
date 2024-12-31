@@ -21,7 +21,6 @@ mod game_state;
 mod projectiles;
 mod schedule;
 mod spaceship;
-mod system_status;
 mod temperature;
 mod thrusters;
 mod weapons;
@@ -32,12 +31,12 @@ use camera::CameraPlugin;
 // use collision::CollisionPlugin;
 use debug::DebugPlugin;
 // use projectiles::ProjectilesPlugin;
+use durability::DurabilityPlugin;
 use game_state::GameStatePlugin;
 use schedule::SchedulePlugin;
 use spaceship::SpaceshipPlugin;
-// use weapons::WeaponsPlugin;
-use durability::DurabilityPlugin;
 use thrusters::ThrusterPlugin;
+use weapons::WeaponsPlugin;
 
 fn main() {
     App::new()
@@ -73,7 +72,7 @@ fn main() {
             SchedulePlugin,
             GameStatePlugin,
             SpaceshipPlugin,
-            // WeaponsPlugin,
+            WeaponsPlugin,
             DurabilityPlugin,
             HanabiPlugin,
             ThrusterPlugin,
