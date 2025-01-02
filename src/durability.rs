@@ -37,7 +37,7 @@ impl Default for DurabilityCharacteristics {
     }
 }
 
-#[derive(Bundle, Default)]
+#[derive(Bundle, Default, Debug)]
 pub struct DurabilityBundle {
     pub durability: Durability,
     pub characteristics: DurabilityCharacteristics,

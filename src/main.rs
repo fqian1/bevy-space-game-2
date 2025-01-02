@@ -11,6 +11,7 @@ use bevy::{
 use bevy_hanabi::prelude::*;
 
 mod asset_loader;
+mod background;
 mod camera;
 mod cleanup;
 mod collision;
@@ -18,6 +19,7 @@ mod debug;
 mod durability;
 mod fuel;
 mod game_state;
+mod particle_effects;
 mod projectiles;
 mod schedule;
 mod spaceship;
@@ -31,8 +33,10 @@ use camera::CameraPlugin;
 // use collision::CollisionPlugin;
 use debug::DebugPlugin;
 // use projectiles::ProjectilesPlugin;
+use background::BackgroundPlugin;
 use durability::DurabilityPlugin;
 use game_state::GameStatePlugin;
+use particle_effects::ParticleEffectsPlugin;
 use schedule::SchedulePlugin;
 use spaceship::SpaceshipPlugin;
 use thrusters::ThrusterPlugin;
@@ -76,6 +80,8 @@ fn main() {
             DurabilityPlugin,
             HanabiPlugin,
             ThrusterPlugin,
+            BackgroundPlugin,
+            ParticleEffectsPlugin,
         ))
         .insert_resource(Gravity(Vec2::ZERO))
         .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))

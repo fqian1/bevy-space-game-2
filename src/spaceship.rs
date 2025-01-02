@@ -1,12 +1,14 @@
 use avian2d::{math::*, prelude::*};
 use bevy::prelude::*;
+use bevy_hanabi::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
 use crate::fuel::*;
+use crate::particle_effects::*;
 use crate::schedule::InGameSet;
 use crate::thrusters::ThrusterState;
-use crate::thrusters::{Thruster, ThrusterBundle, ThrusterRoles};
+use crate::thrusters::*;
 use crate::weapons::*;
 
 #[derive(Component, Debug)]
@@ -20,8 +22,8 @@ pub struct Ai;
 
 #[derive(Bundle)]
 pub struct SpaceshipBundle {
-    pub drive_fuel_capacity: DriveFuelCapacity,
-    pub thruster_fuel_capacity: ThrusterFuelCapacity,
+    // pub thruster_fuel: FuelTankBundle,
+    // pub drive_fuel: FuelTankBundle,
     pub rigid_body: RigidBody,
     pub collider: Collider,
     pub transform: Transform,
@@ -32,8 +34,8 @@ pub struct SpaceshipBundle {
 impl Default for SpaceshipBundle {
     fn default() -> Self {
         Self {
-            thruster_fuel_capacity: ThrusterFuelCapacity(1000.0),
-            drive_fuel_capacity: DriveFuelCapacity(1000.0),
+            // thruster_fuel: FuelTankBundle::default(),
+            // drive_fuel: FuelTankBundle::default(),
             rigid_body: RigidBody::Dynamic,
             collider: Collider::rectangle(15.0, 25.0),
             transform: Transform::from_translation(Vec3::ZERO),
@@ -46,6 +48,7 @@ impl Default for SpaceshipBundle {
 fn spawn_player_spaceship(
     mut commands: Commands,
     assets: Res<ImageAssets>,
+    effect_handle: Res<EffectAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -88,6 +91,39 @@ fn spawn_player_spaceship(
         ThrusterRoles::Backward | ThrusterRoles::Left | ThrusterRoles::AntiClockwise,
     ];
 
+    let thruster_characteristics = [
+        ThrusterCharacteristics {
+            minimum_thrust: 2500.0,
+            impulse_response: 500000.0,
+            variance: 100.0,
+            max_thrust: 250000.0,
+        },
+        ThrusterCharacteristics {
+            minimum_thrust: 500.0,
+            impulse_response: 50000.0,
+            variance: 100.0,
+            max_thrust: 25000.0,
+        },
+        ThrusterCharacteristics {
+            minimum_thrust: 500.0,
+            impulse_response: 50000.0,
+            variance: 100.0,
+            max_thrust: 25000.0,
+        },
+        ThrusterCharacteristics {
+            minimum_thrust: 500.0,
+            impulse_response: 50000.0,
+            variance: 100.0,
+            max_thrust: 25000.0,
+        },
+        ThrusterCharacteristics {
+            minimum_thrust: 500.0,
+            impulse_response: 50000.0,
+            variance: 100.0,
+            max_thrust: 25000.0,
+        },
+    ];
+
     let thrusters: Vec<Entity> = (0..5)
         .map(|i| {
             commands
@@ -96,11 +132,18 @@ fn spawn_player_spaceship(
                         transform: Transform::from_translation(thruster_locations[i].extend(0.0))
                             .with_rotation(Quat::from_rotation_z(thruster_rotations[i])),
                         roles: thruster_roles[i],
+                        thruster_characteristics: thruster_characteristics[i],
                         ..default()
                     },
                     Mesh2d(meshes.add(Rectangle::new(2.0, 2.0))),
                     MeshMaterial2d(materials.add(Color::srgb(0.8, 0.8, 0.8))),
                 ))
+                .with_children(|parent| {
+                    parent.spawn(ParticleEffectBundle {
+                        effect: ParticleEffect::new(effect_handle.thruster_gas.clone()),
+                        ..default()
+                    });
+                })
                 .id()
         })
         .collect();
@@ -109,12 +152,12 @@ fn spawn_player_spaceship(
         .spawn((
             WeaponBundle {
                 weapon_type: WeaponType::GatlingGun,
-                transform: Transform::from_translation(Vec3::new(7.5, 0.0, 0.0))
-                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
+                transform: Transform::from_translation(Vec3::new(10.0, 0.0, 0.0))
+                    .with_rotation(Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2)),
                 weapon_state: WeaponState::Ready,
                 ..default()
             },
-            Mesh2d(meshes.add(Rectangle::new(2.0, 4.0))),
+            Mesh2d(meshes.add(Rectangle::new(3.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.3, 0.4))),
         ))
         .id();
@@ -140,7 +183,6 @@ fn spaceship_control(
             let Ok((mut weapon_state, q_weapon_type)) = q_weapons.get_mut(child) else {
                 continue;
             };
-            info!("found weapon");
             if weapon_type == q_weapon_type && *weapon_state == WeaponState::Ready {
                 *weapon_state = WeaponState::Firing;
             }

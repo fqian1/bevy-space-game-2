@@ -1,9 +1,11 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy_hanabi::prelude::*;
 use bitflags::bitflags;
 use rand::Rng;
 
 use crate::durability::*;
+use crate::particle_effects::*;
 use crate::schedule::*;
 use crate::temperature::*;
 
@@ -15,7 +17,7 @@ pub struct Thrust(f32);
 
 impl Default for Thrust {
     fn default() -> Self {
-        Self(5000.0)
+        Self(0.0)
     }
 }
 
@@ -73,6 +75,8 @@ pub struct ThrusterBundle {
     pub transform: Transform,
     pub roles: ThrusterRoles,
     pub thruster_status: ThrusterState,
+    pub durability: DurabilityBundle,
+    pub temperature: TemperatureBundle,
 }
 
 pub fn update_thrusters(
@@ -83,6 +87,7 @@ pub fn update_thrusters(
         &mut ThrusterCharacteristics,
         &mut ThrusterState,
     )>,
+    mut commands: Commands,
 ) {
     for (mut thrust, mut temp, mut durability, thruster, status) in query.iter_mut() {
         match *status {
@@ -95,6 +100,22 @@ pub fn update_thrusters(
             }
             _ => {
                 **thrust = 0.0;
+            }
+        }
+    }
+}
+
+pub fn spawn_particles(
+    query: Query<(&ThrusterState, &Children)>,
+    mut particle_query: Query<&mut EffectInitializers>,
+) {
+    for (thruster_state, children) in query.iter() {
+        for child in children.iter() {
+            if let Ok(mut initializer) = particle_query.get_mut(*child) {
+                if let ThrusterState::Active = *thruster_state {
+                    info!("particle");
+                    initializer.reset();
+                }
             }
         }
     }
@@ -122,11 +143,11 @@ pub fn apply_force(
                 thruster_global_transform.translation().truncate(),
                 parent_global_transform.translation().truncate() + **parent_center_of_mass,
             );
-            info!(
-                "Applying force {:?} at point {:?}",
-                force,
-                thruster_global_transform.translation().truncate()
-            );
+            // info!(
+            //     "Applying force {:?} at point {:?}",
+            //     force,
+            //     thruster_global_transform.translation().truncate()
+            // );
         }
     }
 }
@@ -135,7 +156,8 @@ pub struct ThrusterPlugin;
 
 impl Plugin for ThrusterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, apply_force.in_set(InGameSet::Physics))
-            .add_systems(FixedUpdate, update_thrusters.in_set(InGameSet::GameLogic));
+        app.add_systems(FixedUpdate, apply_force.in_set(InGameSet::GameLogic))
+            .add_systems(FixedUpdate, update_thrusters.in_set(InGameSet::Physics))
+            .add_systems(Update, spawn_particles.in_set(InGameSet::Render));
     }
 }

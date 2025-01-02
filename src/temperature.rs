@@ -29,7 +29,7 @@ impl Default for Temperature {
     }
 }
 
-#[derive(Bundle, Default)]
+#[derive(Bundle, Default, Debug)]
 pub struct TemperatureBundle {
     pub temperature: Temperature,
     pub characteristics: ThermalCharacteristics,
