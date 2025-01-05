@@ -36,7 +36,7 @@ pub struct WeaponCharacteristics {
 impl Default for WeaponCharacteristics {
     fn default() -> Self {
         Self {
-            rate_of_fire: 0.1,
+            rate_of_fire: 0.01,
             muzzle_location: Vec2::new(0.0, 10.0),
             muzzle_orientation: 0.0,
             weapon_power: 100.0,
@@ -88,17 +88,15 @@ pub fn fire_weapon(
                         * Quat::from_rotation_z(weapon_characteristics.muzzle_orientation))
                     .mul_vec3(Vec3::Y)
                     .truncate()
-                        * weapon_characteristics.weapon_power
-                        / 10.0,
+                        * weapon_characteristics.weapon_power,
                 ),
                 ..default()
             };
             commands.spawn((
                 bullet_bundle,
-                Mesh2d(meshes.add(Rectangle::new(2.0, 4.0))),
+                Mesh2d(meshes.add(Rectangle::new(1.0, 3.0))),
                 MeshMaterial2d(materials.add(Color::srgb(253.0, 255.0, 23.0))),
             ));
-            info!("spawned bullet");
             weapon_characteristics.time_since_last_fired = 0.0;
             *weapon_status = WeaponState::Loading;
         } else if let WeaponState::Loading = *weapon_status {

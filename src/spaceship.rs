@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset_loader::ImageAssets;
 use crate::fuel::*;
+use crate::particle_effects::setup;
 use crate::particle_effects::*;
 use crate::schedule::InGameSet;
 use crate::thrusters::ThrusterState;
@@ -248,16 +249,13 @@ fn spaceship_control(
     ]) {
         set_thruster_status(&ThrusterRoles::None);
     }
-    if keyboard_input.any_just_released([KeyCode::KeyF]) {
-        set_weapon_state(&WeaponType::GatlingGun);
-    }
 }
 
 pub struct SpaceshipPlugin;
 
 impl Plugin for SpaceshipPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, spawn_player_spaceship)
+        app.add_systems(PostStartup, spawn_player_spaceship.after(setup))
             .add_systems(FixedUpdate, spaceship_control.in_set(InGameSet::Physics));
     }
 }

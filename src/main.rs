@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use avian2d::prelude::*;
 use bevy::{
     // core::FrameCount,
@@ -8,7 +6,9 @@ use bevy::{
     window::{CursorGrabMode, PresentMode, SystemCursorIcon, WindowLevel, WindowTheme},
     // winit::cursor::CursorIcon,
 };
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_hanabi::prelude::*;
+use serde::{Deserialize, Serialize};
 
 mod asset_loader;
 mod background;
@@ -45,6 +45,7 @@ use weapons::WeaponsPlugin;
 fn main() {
     App::new()
         .add_plugins((
+            EmbeddedAssetPlugin::default(),
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Space Game".to_string(),

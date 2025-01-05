@@ -1,3 +1,7 @@
 DefaultSpaceship(
-    
+    mesh: Mesh2d(meshes.add(Rectangle::new(20.0, 40.0),
+    mesh_material: MeshMaterial2d(materials.add(Color::srgb(0.8, 0.8, 0.8))),
+    thrusters: (
+
+    )
 )

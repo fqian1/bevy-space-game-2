@@ -19,6 +19,8 @@ bevy_hanabi = { version = "0.14", default-features = false, features = ["2d"] }
 bitflags = "2.6.0"
 ron = "0.8.1"
 serde = { version = "1.0.216", features = ["derive"] }
+bevy_embedded_assets = "0.12.0"
+blake3 = { version = "1.5.5", default-features = false, features = ["std"] }
 
 [profile.dev]
 opt-level = 1

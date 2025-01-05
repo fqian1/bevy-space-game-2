@@ -110,10 +110,9 @@ pub fn spawn_particles(
     mut particle_query: Query<&mut EffectInitializers>,
 ) {
     for (thruster_state, children) in query.iter() {
-        for child in children.iter() {
-            if let Ok(mut initializer) = particle_query.get_mut(*child) {
-                if let ThrusterState::Active = *thruster_state {
-                    info!("particle");
+        if let ThrusterState::Active = *thruster_state {
+            for child in children.iter() {
+                if let Ok(mut initializer) = particle_query.get_mut(*child) {
                     initializer.reset();
                 }
             }

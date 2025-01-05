@@ -634,6 +634,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_embedded_assets"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b0e583b2d6b80d44d9a9da6823892ed7e45653c7e3e98b67d9e38a8b98fe796"
+dependencies = [
+ "bevy",
+ "cargo-emit",
+ "futures-io",
+ "futures-lite",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "bevy_encase_derive"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1542,6 +1555,12 @@ dependencies = [
  "slab",
  "thiserror 1.0.69",
 ]
+
+[[package]]
+name = "cargo-emit"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
 
 [[package]]
 name = "cc"
@@ -3593,7 +3612,7 @@ dependencies = [
  "proc-macro-error-attr",
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 1.0.65",
  "version_check",
 ]
 
@@ -4068,9 +4087,11 @@ dependencies = [
  "avian2d",
  "bevy",
  "bevy_aseprite_ultra",
+ "bevy_embedded_assets",
  "bevy_enhanced_input",
  "bevy_hanabi",
  "bitflags 2.6.0",
+ "blake3",
  "log",
  "rand",
  "ron",
@@ -4157,12 +4178,12 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.109"
+version = "1.0.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+checksum = "f3a1d708c221c5a612956ef9f75b37e454e88d1f7b899fbd3a18d4252012d663"
 dependencies = [
  "proc-macro2",
- "unicode-ident",
+ "unicode-xid",
 ]
 
 [[package]]
